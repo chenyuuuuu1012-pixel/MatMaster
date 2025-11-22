@@ -13,6 +13,7 @@ from agents.matmaster_agent.constant import (
     MATMASTER_AGENT_NAME,
 )
 from agents.matmaster_agent.flow_agents.model import PlanStepStatusEnum
+from agents.matmaster_agent.flow_agents.utils.step_utils import get_step_status
 from agents.matmaster_agent.job_agents.result_core_agent.agent import (
     ResultMCPAgent,
 )
@@ -138,7 +139,7 @@ class BaseAsyncJobAgent(BaseAgentWithParamsRecommendation):
         current_step = ctx.session.state['plan']['steps'][
             ctx.session.state['plan_index']
         ]
-        current_step_status = current_step['status']
+        current_step_status = get_step_status(current_step)
         if current_step_status in [
             PlanStepStatusEnum.SUBMITTED,
             PlanStepStatusEnum.SUCCESS,

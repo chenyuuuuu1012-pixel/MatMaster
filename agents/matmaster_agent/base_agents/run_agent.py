@@ -104,12 +104,12 @@ class BaseAgentWithParamsRecommendation(
     @override
     async def _run_events(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
         # 根据计划来
-        current_step = ctx.session.state['plan']['steps'][
+        current_step_tool = ctx.session.state['plan']['steps'][
             ctx.session.state['plan_index']
-        ]
-        current_step_tool_name = current_step['tool_name']
+        ]['tools'][ctx.session.state['tool_index']]
+        current_step_tool_name = current_step_tool['tool_name']
         self.tool_call_info_agent.instruction = gen_tool_call_info_instruction(
-            user_prompt=current_step['description'],
+            user_prompt=current_step_tool['description'],
             agent_prompt=self.instruction,
             tool_args_recommend_prompt=ALL_TOOLS[current_step_tool_name].get(
                 'args_setting', ''
@@ -124,7 +124,7 @@ class BaseAgentWithParamsRecommendation(
         if (
             not ctx.session.state['tool_call_info']
             or ctx.session.state['tool_call_info']['tool_name']
-            != current_step['tool_name']
+            != current_step_tool['tool_name']
         ):
             update_tool_call_info = copy.deepcopy(ctx.session.state['tool_call_info'])
             update_tool_call_info['tool_name'] = current_step_tool_name
