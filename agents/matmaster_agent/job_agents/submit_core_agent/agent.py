@@ -98,9 +98,9 @@ class SubmitCoreMCPAgent(MCPAgent):
 
                         # 更新 plan 为失败
                         update_plan = copy.deepcopy(ctx.session.state['plan'])
-                        update_plan['steps'][ctx.session.state['plan_index']][
-                            'status'
-                        ] = 'failed'
+                        update_plan['steps'][ctx.session.state['plan_index']]['tools'][
+                            ctx.session.state['tool_index']
+                        ]['status'] = 'failed'
                         yield update_state_event(ctx, state_delta={'plan': update_plan})
 
                         raise RuntimeError('Tool Execution Failed')

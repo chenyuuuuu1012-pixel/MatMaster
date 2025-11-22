@@ -406,9 +406,9 @@ async def display_failed_result_or_consume(
 
         # 更新 plan 为失败
         update_plan = copy.deepcopy(ctx.session.state['plan'])
-        update_plan['steps'][ctx.session.state['plan_index']][
-            'status'
-        ] = PlanStepStatusEnum.FAILED
+        update_plan['steps'][ctx.session.state['plan_index']]['tools'][
+            ctx.session.state['tool_index']
+        ]['status'] = PlanStepStatusEnum.FAILED
         yield update_state_event(ctx, state_delta={'plan': update_plan})
 
         raise RuntimeError('Tool Execution Error')
@@ -419,7 +419,9 @@ async def display_failed_result_or_consume(
             status = PlanStepStatusEnum.SUCCESS  # real-time
         else:
             status = PlanStepStatusEnum.SUBMITTED  # job-type
-        update_plan['steps'][ctx.session.state['plan_index']]['status'] = status
+        update_plan['steps'][ctx.session.state['plan_index']]['tools'][
+            ctx.session.state['tool_index']
+        ]['status'] = status
         yield update_state_event(ctx, state_delta={'plan': update_plan})
 
         async for consume_event in photon_consume_event(ctx, event, author):
