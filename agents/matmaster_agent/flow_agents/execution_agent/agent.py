@@ -64,6 +64,7 @@ class MatMasterSupervisorAgent(DisallowTransferLlmAgent):
         for index, step in enumerate(plan['steps']):
             step['relationship']
             step_status = get_step_status(step)  # plan, process, success, failed
+            logger.info(f'{ctx.session.id} step_status = {step_status}')
             if step_status == PlanStepStatusEnum.PLAN:  # 所有 tool 均未执行
                 for step_tool_index, step_tool in enumerate(step['tools']):
                     target_agent = get_agent_name(
