@@ -1,7 +1,7 @@
 import copy
 
 from agents.matmaster_agent.constant import CURRENT_ENV, BohriumExecutor, BohriumStorge
-from agents.matmaster_agent.sub_agents.mapping import (
+from agents.matmaster_agent.sub_agents.agent_runtime_config import (
     AGENT_IMAGE_ADDRESS,
     AGENT_MACHINE_TYPE,
 )
@@ -21,7 +21,7 @@ ApexBohriumExecutor['machine']['remote_profile']['image_address'] = (
     AGENT_IMAGE_ADDRESS.get(ApexAgentName, '')
 )
 ApexBohriumExecutor['machine']['remote_profile']['machine_type'] = (
-    AGENT_MACHINE_TYPE.get(ApexAgentName) or 'c2_m4_cpu'
+    AGENT_MACHINE_TYPE.get(ApexAgentName, 'c2_m4_cpu')
 )
 
 # APEX专用的Bohrium存储配置

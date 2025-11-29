@@ -1,7 +1,7 @@
 import copy
 
 from agents.matmaster_agent.constant import CURRENT_ENV, BohriumExecutor, BohriumStorge
-from agents.matmaster_agent.sub_agents.mapping import (
+from agents.matmaster_agent.sub_agents.agent_runtime_config import (
     AGENT_IMAGE_ADDRESS,
     AGENT_MACHINE_TYPE,
 )
@@ -17,6 +17,6 @@ COMPDART_BOHRIUM_EXECUTOR['machine']['remote_profile']['image_address'] = (
     AGENT_IMAGE_ADDRESS.get(COMPDART_AGENT_NAME, '')
 )
 COMPDART_BOHRIUM_EXECUTOR['machine']['remote_profile']['machine_type'] = (
-    AGENT_MACHINE_TYPE.get(COMPDART_AGENT_NAME) or 'c2_m4_cpu'
+    AGENT_MACHINE_TYPE.get(COMPDART_AGENT_NAME, 'c2_m4_cpu')
 )
 COMPDART_BOHRIUM_STORAGE = copy.deepcopy(BohriumStorge)

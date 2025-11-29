@@ -61,7 +61,10 @@ async def collect_tool_params_parallel(
     execution_agent_sub_agents: List,
 ) -> List[AsyncToolParamsSchema]:
     """
-    并行收集所有异步工具的参数
+    串行收集所有异步工具的参数
+
+    注意：虽然函数名是 parallel，但实际是串行执行，因为 tool_call_info 和 function_declarations
+    是共享的 state，并行调用会导致相互覆盖
 
     Args:
         ctx: InvocationContext
@@ -124,31 +127,54 @@ async def collect_tool_params_parallel(
                 tool_call_info = None
                 try:
                     # 步骤1: 调用 tool_call_info_agent 获取初始参数
+                    # 注意：save_tool_call_info_before_remove callback 已经会在 LLM 响应时
+                    # 自动保存 function_call 到 state['tool_call_info']，这里不需要手动捕获
+                    logger.info(
+                        f'{ctx.session.id} Calling tool_call_info_agent for {tool_name}'
+                    )
+                    event_count = 0
                     async for event in target_agent.tool_call_info_agent.run_async(ctx):
+                        event_count += 1
                         # 手动处理 update_state_event，直接更新 state
                         if event.actions and event.actions.state_delta:
                             state_delta = event.actions.state_delta
+                            logger.info(
+                                f'{ctx.session.id} Received state_delta from tool_call_info_agent: {state_delta}'
+                            )
                             for key, value in state_delta.items():
                                 ctx.session.state[key] = value
-                                logger.debug(
+                                logger.info(
                                     f'{ctx.session.id} Updated state[{key}] = {value}'
                                 )
 
-                    # 获取初始 tool_call_info
+                    logger.info(
+                        f'{ctx.session.id} tool_call_info_agent finished, event_count={event_count}, '
+                        f'tool_call_info in state: {ctx.session.state.get("tool_call_info")}'
+                    )
+
+                    # 获取初始 tool_call_info（从 state 中获取，由 save_tool_call_info_before_remove 保存）
                     if ctx.session.state.get('tool_call_info'):
                         tool_call_info = copy.deepcopy(
                             ctx.session.state['tool_call_info']
                         )
+                        logger.info(
+                            f'{ctx.session.id} Got tool_call_info from state: {tool_call_info}'
+                        )
+                    else:
+                        logger.warning(
+                            f'{ctx.session.id} No tool_call_info in state after tool_call_info_agent'
+                        )
+                        tool_call_info = None
 
-                    # 步骤2: 如果有 missing_tool_args，进行参数补全
-                    if tool_call_info and tool_call_info.get('missing_tool_args'):
+                    # 步骤2: 使用 function_declarations 补充参数（包括有默认值的参数）
+                    if tool_call_info:
                         # 确保 tool_args 和 missing_tool_args 存在
                         if 'tool_args' not in tool_call_info:
                             tool_call_info['tool_args'] = {}
                         if 'missing_tool_args' not in tool_call_info:
                             tool_call_info['missing_tool_args'] = []
 
-                        # 更新 function_declarations
+                        # 更新 function_declarations（无论 missing_tool_args 是否为空都要调用，以补充有默认值的参数）
                         function_declarations = ctx.session.state.get(
                             'function_declarations', []
                         )
@@ -159,6 +185,11 @@ async def collect_tool_params_parallel(
                                 )
                             )
                             ctx.session.state['tool_call_info'] = tool_call_info
+                            logger.info(
+                                f'{ctx.session.id} Updated tool_call_info with function_declarations: '
+                                f'tool_args={tool_call_info.get("tool_args", {})}, '
+                                f'missing_tool_args={tool_call_info.get("missing_tool_args", [])}'
+                            )
 
                         # 检查是否还有 missing_tool_args（过滤掉 executor, storage）
                         missing_tool_args = [
@@ -304,19 +335,20 @@ async def collect_tool_params_parallel(
             agent_name=agent_name,
         )
 
-    # 并行收集所有工具的参数
-    tasks = [collect_single_tool_params(step_info) for step_info in async_steps]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    # 处理异常
+    # 串行收集所有工具的参数（避免共享 state 相互覆盖）
+    # 注意：不能并行调用，因为 tool_call_info 和 function_declarations 是共享的 state
+    # 并行调用会导致相互覆盖，导致参数收集失败
     params_list = []
-    for i, result in enumerate(results):
-        if isinstance(result, Exception):
+    for step_info in async_steps:
+        try:
+            result = await collect_single_tool_params(step_info)
+            params_list.append(result)
+        except Exception as e:
             logger.error(
-                f'{ctx.session.id} Failed to collect params for {async_steps[i]["tool_name"]}: {result}'
+                f'{ctx.session.id} Failed to collect params for {step_info["tool_name"]}: {e}',
+                exc_info=True,
             )
             # 返回基本信息
-            step_info = async_steps[i]
             params_list.append(
                 AsyncToolParamsSchema(
                     tool_name=step_info['tool_name'],
@@ -329,8 +361,6 @@ async def collect_tool_params_parallel(
                     ).name,
                 )
             )
-        else:
-            params_list.append(result)
 
     return params_list
 
@@ -363,14 +393,22 @@ class ParametersAgent(DisallowTransferLlmAgent):
         if execution_agent is None:
             raise ValueError('execution_agent is required')
 
+        # 从 kwargs 中获取参数，如果没有则使用默认值
+        name = kwargs.pop('name', PARAMETERS_AGENT_NAME)
+        model = kwargs.pop('model', MatMasterLlmConfig.default_litellm_model)
+        description = kwargs.pop('description', PARAMETERS_AGENT_DESCRIPTION)
+        instruction = kwargs.pop('instruction', PARAMETERS_AGENT_INSTRUCTION)
+        disallow_transfer_to_parent = kwargs.pop('disallow_transfer_to_parent', True)
+        disallow_transfer_to_peers = kwargs.pop('disallow_transfer_to_peers', True)
+
         # 先调用父类初始化，不传递 execution_agent（避免 Pydantic 验证错误）
         super().__init__(
-            name=PARAMETERS_AGENT_NAME,
-            model=MatMasterLlmConfig.default_litellm_model,
-            description=PARAMETERS_AGENT_DESCRIPTION,
-            instruction=PARAMETERS_AGENT_INSTRUCTION,
-            disallow_transfer_to_parent=True,
-            disallow_transfer_to_peers=True,
+            name=name,
+            model=model,
+            description=description,
+            instruction=instruction,
+            disallow_transfer_to_parent=disallow_transfer_to_parent,
+            disallow_transfer_to_peers=disallow_transfer_to_peers,
             **kwargs,
         )
         # 使用 object.__setattr__ 直接设置 execution_agent，绕过 Pydantic 验证
@@ -403,9 +441,9 @@ class ParametersAgent(DisallowTransferLlmAgent):
         )
 
         if not parameters_collection:
-            # 阶段1: 并行收集所有异步工具的参数
+            # 阶段1: 串行收集所有异步工具的参数（避免共享 state 相互覆盖）
             logger.info(
-                f'{ctx.session.id} Collecting params for async tools in parallel...'
+                f'{ctx.session.id} Collecting params for async tools sequentially...'
             )
 
             params_list = await collect_tool_params_parallel(

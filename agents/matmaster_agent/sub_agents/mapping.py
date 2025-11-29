@@ -5,6 +5,9 @@ from agents.matmaster_agent.sub_agents.ABACUS_agent.agent import (
     abacus_toolset,
 )
 from agents.matmaster_agent.sub_agents.ABACUS_agent.constant import ABACUS_AGENT_NAME
+from agents.matmaster_agent.sub_agents.agent_runtime_config import (
+    AGENT_IMAGE_ADDRESS,
+)
 from agents.matmaster_agent.sub_agents.apex_agent.agent import ApexAgent, apex_toolset
 from agents.matmaster_agent.sub_agents.apex_agent.constant import ApexAgentName
 from agents.matmaster_agent.sub_agents.built_in_agent.file_parse_agent.agent import (
@@ -270,43 +273,6 @@ from agents.matmaster_agent.sub_agents.XRD_agent.constant import (
     XRD_AGENT_NAME,
 )
 
-# Agent 镜像地址映射（使用字符串作为 key，避免循环导入）
-AGENT_IMAGE_ADDRESS = {
-    'ABACUS_calculation_agent': 'registry.dp.tech/dptech/dp/native/prod-22618/abacusagenttools-matmaster-new-tool:v0.2.3',
-    'apex_agent': 'registry.dp.tech/dptech/dp/native/prod-16664/apex-agent-all:0.2.1',
-    'LAMMPS_agent': 'registry.dp.tech/dptech/lammps-agent:9ae769be',
-    'vaspkit_agent': 'registry.dp.tech/dptech/dp/native/prod-16664/vaspkit-agent:0.0.1',
-    'dpa_calculator_agent': 'registry.dp.tech/dptech/dpa-calculator:a86b37cc',
-    'compdart_agent': 'registry.dp.tech/dptech/dpa-calculator:50e69ca3',
-    'piloteye_electro_agent': 'registry.dp.tech/dptech/dp/native/prod-13375/piloteye:mcpv03',
-    'organic_reaction_agent': 'registry.dp.tech/dptech/dp/native/prod-13364/autots:0.1.0',
-    'HEA_assistant_agent': 'registry.dp.tech/dptech/dp/native/prod-485756/mcphub:heafinal',
-    'thermoelectric_agent': 'registry.dp.tech/dptech/dp/native/prod-435364/dpa-thermo-superconductor:20',
-    'superconductor_agent': 'registry.dp.tech/dptech/dp/native/prod-435364/dpa-thermo-superconductor:20',
-    'finetune_dpa_agent': 'registry.dp.tech/dptech/dp/native/prod-435364/dpa-thermo-superconductor:20',
-    'convexhull_agent': 'registry.dp.tech/dptech/dp/native/prod-435364/dpa-thermo-convexhull:20',
-    'structure_generate_agent': 'registry.dp.tech/dptech/dpa-calculator:46bc2c88',
-}
-
-# Agent 机器类型映射（使用字符串作为 key，避免循环导入）
-# 如果 agent 未在此字典中，默认使用 'c2_m4_cpu'
-AGENT_MACHINE_TYPE = {
-    'ABACUS_calculation_agent': 'c32_m128_cpu',
-    'apex_agent': 'c2_m4_cpu',  # 默认值，未明确设置
-    'LAMMPS_agent': 'c16_m64_1 * NVIDIA 4090',
-    'vaspkit_agent': 'c2_m8_cpu',
-    'dpa_calculator_agent': 'c16_m64_1 * NVIDIA 4090',
-    'compdart_agent': 'c16_m64_1 * NVIDIA 4090',
-    'piloteye_electro_agent': 'c2_m8_cpu',
-    'organic_reaction_agent': 'c32_m128_cpu',
-    'HEA_assistant_agent': 'c2_m4_cpu',  # 默认值，未明确设置
-    'thermoelectric_agent': 'c16_m64_1 * NVIDIA 4090',
-    'superconductor_agent': 'c16_m64_1 * NVIDIA 4090',
-    'finetune_dpa_agent': 'c16_m64_1 * NVIDIA 4090',
-    'convexhull_agent': 'c16_m64_1 * NVIDIA 4090',
-    'structure_generate_agent': 'c8_m32_1 * NVIDIA 4090',
-}
-
 ALL_TOOLSET_DICT = {
     'abacus_toolset': {
         'toolset': abacus_toolset,
@@ -337,16 +303,28 @@ ALL_TOOLSET_DICT = {
         'toolset': hea_assistant_toolset,
         'image': AGENT_IMAGE_ADDRESS.get('HEA_assistant_agent', ''),
     },
-    'hea_calculator_toolset': {'toolset': hea_calculator_toolset, 'image': ''},
+    'hea_calculator_toolset': {
+        'toolset': hea_calculator_toolset,
+        'image': AGENT_IMAGE_ADDRESS.get('HEACalculator_agent', ''),
+    },
     'hea_kb_toolset': {'toolset': hea_kb_toolset, 'image': ''},
     'sse_kb_toolset': {'toolset': sse_kb_toolset, 'image': ''},
     'polymer_kb_toolset': {'toolset': polymer_kb_toolset, 'image': ''},
     'steel_kb_toolset': {'toolset': steel_kb_toolset, 'image': ''},
     'steel_predict_toolset': {'toolset': steel_predict_toolset, 'image': ''},
-    'optimade_toolset': {'toolset': optimade_toolset, 'image': ''},
-    'bohriumpublic_toolset': {'toolset': bohriumpublic_toolset, 'image': ''},
+    'optimade_toolset': {
+        'toolset': optimade_toolset,
+        'image': AGENT_IMAGE_ADDRESS.get('Optimade_agent', ''),
+    },
+    'bohriumpublic_toolset': {
+        'toolset': bohriumpublic_toolset,
+        'image': AGENT_IMAGE_ADDRESS.get('BohriumPublic_agent', ''),
+    },
     'openlam_toolset': {'toolset': openlam_toolset, 'image': ''},
-    'mofdb_toolset': {'toolset': mofdb_toolset, 'image': ''},
+    'mofdb_toolset': {
+        'toolset': mofdb_toolset,
+        'image': AGENT_IMAGE_ADDRESS.get('Mofdb_agent', ''),
+    },
     'organic_reaction_toolset': {
         'toolset': organic_reaction_toolset,
         'image': AGENT_IMAGE_ADDRESS.get('organic_reaction_agent', ''),

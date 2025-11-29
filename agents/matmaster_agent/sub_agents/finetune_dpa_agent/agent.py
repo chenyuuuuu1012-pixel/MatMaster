@@ -12,13 +12,13 @@ from agents.matmaster_agent.constant import (
 from agents.matmaster_agent.job_agents.agent import BaseAsyncJobAgent
 from agents.matmaster_agent.llm_config import LLMConfig
 from agents.matmaster_agent.logger import matmodeler_logging_handler
+from agents.matmaster_agent.sub_agents.agent_runtime_config import (
+    AGENT_IMAGE_ADDRESS,
+    AGENT_MACHINE_TYPE,
+)
 from agents.matmaster_agent.sub_agents.finetune_dpa_agent.prompt import (
     FinetuneDPAAgentDescription,
     FinetuneDPAAgentInstruction,
-)
-from agents.matmaster_agent.sub_agents.mapping import (
-    AGENT_IMAGE_ADDRESS,
-    AGENT_MACHINE_TYPE,
 )
 
 from .constant import FinetuneDPAAgentName, FinetuneDPAServerUrl
