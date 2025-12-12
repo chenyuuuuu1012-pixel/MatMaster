@@ -284,7 +284,7 @@ ALL_TOOLSET_DICT = {
     },
     'smiles_conversion_toolset': {'toolset': smiles_conversion_toolset, 'image': ''},
     'retrosyn_toolset': {'toolset': retrosyn_toolset, 'image': ''},
-    'uni_elf_toolset': {'toolset': uni_elf_toolset, 'image': ''},
+    'unielf_toolset': {'toolset': unielf_toolset, 'image': ''},
     'compdart_toolset': {
         'toolset': compdart_toolset,
         'image': AGENT_IMAGE_ADDRESS.get('compdart_agent', ''),
@@ -363,8 +363,14 @@ ALL_TOOLSET_DICT = {
     },
     'nmr_toolset': {'toolset': nmr_toolset, 'image': ''},
     'xrd_toolset': {'toolset': xrd_toolset, 'image': ''},
-    'electron_microscope_toolset': {'toolset': electron_microscope_toolset, 'image': ''},
-    'physical_adsorption_toolset': {'toolset': physical_adsorption_toolset, 'image': ''},
+    'electron_microscope_toolset': {
+        'toolset': electron_microscope_toolset,
+        'image': '',
+    },
+    'physical_adsorption_toolset': {
+        'toolset': physical_adsorption_toolset,
+        'image': '',
+    },
 }
 
 AGENT_CLASS_MAPPING = {
